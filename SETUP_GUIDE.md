@@ -11,7 +11,7 @@
    - **Visibility**: ✅ **Public** (required for GPL-3.0 compliance)
    - **Initialize**: Leave unchecked (we already have files)
 3. Click "Create repository"
-4. **Copy the repository URL** (should be like: `https://github.com/YOUR-USERNAME/docker-wireguard-patched.git`)
+4. **Copy the repository URL** (should be like: `https://github.com/LJRH/docker-wireguard-patched.git`)
 
 ### Step 2: Update Git Configuration
 
@@ -33,7 +33,7 @@ git commit -m "Add CoreDNS security patches
 - Minimal changes to maintain compatibility"
 
 # Add your new GitHub repo as a remote (using SSH)
-git remote add myfork git@github.com:YOUR-USERNAME/docker-wireguard-patched.git
+git remote add myfork git@github.com:LJRH/docker-wireguard-patched.git
 
 # Push to your fork
 git push -u myfork security-patches
@@ -67,10 +67,10 @@ This fork addresses critical vulnerabilities in CoreDNS:
 
 ## 📦 Docker Image
 
-Available on Docker Hub: `YOUR-DOCKERHUB-USERNAME/wireguard`
+Available on Docker Hub: `LJRH/wireguard`
 
 ```bash
-docker pull YOUR-DOCKERHUB-USERNAME/wireguard:latest
+docker pull LJRH/wireguard:latest
 ```
 
 ## 🚀 Usage
@@ -80,7 +80,7 @@ Same as the original LinuxServer.io image. See [upstream documentation](https://
 ```yaml
 services:
   wireguard:
-    image: YOUR-DOCKERHUB-USERNAME/wireguard:latest
+    image: LJRH/wireguard:latest
     container_name: wireguard
     cap_add:
       - NET_ADMIN
@@ -155,14 +155,14 @@ docker login
 
 ### Step 2: Tag Your Image
 
-Replace `YOUR-DOCKERHUB-USERNAME` with your actual Docker Hub username:
+Replace `LJRH` with your actual Docker Hub username:
 
 ```bash
 # Tag with multiple versions for flexibility
-docker tag ljrh/wireguard:latest YOUR-DOCKERHUB-USERNAME/wireguard:latest
-docker tag ljrh/wireguard:latest YOUR-DOCKERHUB-USERNAME/wireguard:$(date +%Y%m%d)
-docker tag ljrh/wireguard:latest YOUR-DOCKERHUB-USERNAME/wireguard:patched-go1.25.5
-docker tag ljrh/wireguard:latest YOUR-DOCKERHUB-USERNAME/wireguard:coredns-1.13.2
+docker tag ljrh/wireguard:latest LJRH/wireguard:latest
+docker tag ljrh/wireguard:latest LJRH/wireguard:$(date +%Y%m%d)
+docker tag ljrh/wireguard:latest LJRH/wireguard:patched-go1.25.5
+docker tag ljrh/wireguard:latest LJRH/wireguard:coredns-1.13.2
 
 # Verify tags
 docker images | grep wireguard
@@ -172,17 +172,17 @@ docker images | grep wireguard
 
 ```bash
 # Push all tags
-docker push YOUR-DOCKERHUB-USERNAME/wireguard:latest
-docker push YOUR-DOCKERHUB-USERNAME/wireguard:$(date +%Y%m%d)
-docker push YOUR-DOCKERHUB-USERNAME/wireguard:patched-go1.25.5
-docker push YOUR-DOCKERHUB-USERNAME/wireguard:coredns-1.13.2
+docker push LJRH/wireguard:latest
+docker push LJRH/wireguard:$(date +%Y%m%d)
+docker push LJRH/wireguard:patched-go1.25.5
+docker push LJRH/wireguard:coredns-1.13.2
 ```
 
 This will take a few minutes as it uploads the ~44MB image.
 
 ### Step 4: Update Docker Hub Repository
 
-1. Go to https://hub.docker.com/r/YOUR-DOCKERHUB-USERNAME/wireguard
+1. Go to https://hub.docker.com/r/LJRH/wireguard
 2. Click "Edit" or go to Settings
 3. Update the **Description**:
 
@@ -205,7 +205,7 @@ Addresses critical Go vulnerabilities in CoreDNS:
 
 ## 📖 Documentation
 
-Full documentation: https://github.com/YOUR-USERNAME/docker-wireguard-patched
+Full documentation: https://github.com/LJRH/docker-wireguard-patched
 
 ## 📦 Tags
 
@@ -218,7 +218,7 @@ Full documentation: https://github.com/YOUR-USERNAME/docker-wireguard-patched
 
 Based on LinuxServer.io's docker-wireguard (GPL-3.0)
 - Original: https://github.com/linuxserver/docker-wireguard
-- Source: https://github.com/YOUR-USERNAME/docker-wireguard-patched
+- Source: https://github.com/LJRH/docker-wireguard-patched
 
 ## ⚖️ License
 
@@ -238,7 +238,7 @@ Create/update your docker-compose.yml:
 ```yaml
 services:
   wireguard:
-    image: YOUR-DOCKERHUB-USERNAME/wireguard:latest
+    image: LJRH/wireguard:latest
     container_name: wireguard
     cap_add:
       - NET_ADMIN
@@ -292,23 +292,23 @@ cd /home/lukehiggins/docker-wireguard
 git checkout -b security-patches
 git add Dockerfile Dockerfile.aarch64 readme-vars.yml AGENTS.md
 git commit -m "Add CoreDNS security patches"
-git remote add myfork git@github.com:YOUR-USERNAME/docker-wireguard-patched.git
+git remote add myfork git@github.com:LJRH/docker-wireguard-patched.git
 git push -u myfork security-patches
 ```
 
 ### Docker Hub Quick Start
 ```bash
 docker login
-docker tag ljrh/wireguard:latest YOUR-USERNAME/wireguard:latest
-docker tag ljrh/wireguard:latest YOUR-USERNAME/wireguard:$(date +%Y%m%d)
-docker push YOUR-USERNAME/wireguard:latest
-docker push YOUR-USERNAME/wireguard:$(date +%Y%m%d)
+docker tag ljrh/wireguard:latest LJRH/wireguard:latest
+docker tag ljrh/wireguard:latest LJRH/wireguard:$(date +%Y%m%d)
+docker push LJRH/wireguard:latest
+docker push LJRH/wireguard:$(date +%Y%m%d)
 ```
 
 ### Deployment Quick Start
 ```bash
 # Pull and run
-docker pull YOUR-USERNAME/wireguard:latest
+docker pull LJRH/wireguard:latest
 docker run -d --name wireguard \
   --cap-add=NET_ADMIN \
   --cap-add=SYS_MODULE \
@@ -320,7 +320,7 @@ docker run -d --name wireguard \
   -v /lib/modules:/lib/modules \
   -p 51820:51820/udp \
   --sysctl="net.ipv4.conf.all.src_valid_mark=1" \
-  YOUR-USERNAME/wireguard:latest
+  LJRH/wireguard:latest
 ```
 
 ---
@@ -330,7 +330,7 @@ docker run -d --name wireguard \
 ### Verify Image Security
 ```bash
 # Check CoreDNS version
-docker run --rm YOUR-USERNAME/wireguard:latest /usr/bin/coredns -version
+docker run --rm LJRH/wireguard:latest /usr/bin/coredns -version
 
 # Should output: CoreDNS-1.13.2, linux/amd64, go1.25.5
 ```
