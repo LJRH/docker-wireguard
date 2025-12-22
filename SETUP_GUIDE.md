@@ -32,8 +32,8 @@ git commit -m "Add CoreDNS security patches
 - Original Go 1.24.1 in Alpine package was vulnerable
 - Minimal changes to maintain compatibility"
 
-# Add your new GitHub repo as a remote
-git remote add myfork https://github.com/YOUR-USERNAME/docker-wireguard-patched.git
+# Add your new GitHub repo as a remote (using SSH)
+git remote add myfork git@github.com:YOUR-USERNAME/docker-wireguard-patched.git
 
 # Push to your fork
 git push -u myfork security-patches
@@ -292,7 +292,7 @@ cd /home/lukehiggins/docker-wireguard
 git checkout -b security-patches
 git add Dockerfile Dockerfile.aarch64 readme-vars.yml AGENTS.md
 git commit -m "Add CoreDNS security patches"
-git remote add myfork https://github.com/YOUR-USERNAME/docker-wireguard-patched.git
+git remote add myfork git@github.com:YOUR-USERNAME/docker-wireguard-patched.git
 git push -u myfork security-patches
 ```
 
