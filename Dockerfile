@@ -15,6 +15,7 @@ RUN \
     && awk '/^P:wireguard-tools$/,/V:/' /tmp/APKINDEX | sed -n 2p | sed 's/^V://'); \
   fi && \
   echo "**** install dependencies ****" && \
+  apk update && \
   apk add --no-cache \
     bc \
     git \
