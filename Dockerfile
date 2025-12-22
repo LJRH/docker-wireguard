@@ -39,7 +39,9 @@ RUN \
   cd /tmp && \
   git clone --depth 1 --branch v${COREDNS_VERSION} https://github.com/coredns/coredns.git && \
   cd coredns && \
-  go mod edit -go=1.24 && \
+  export GOTOOLCHAIN=go1.25.5 && \
+  go mod edit -go=1.25.5 -toolchain=go1.25.5 && \
+  go get github.com/expr-lang/expr@v1.17.7 && \
   go mod tidy && \
   CGO_ENABLED=1 make && \
   install -Dm755 coredns /usr/bin/coredns && \
@@ -52,6 +54,7 @@ RUN \
   printf "Linuxserver.io version: ${VERSION}\nBuild-date: ${BUILD_DATE}" > /build_version && \
   echo "**** clean up ****" && \
   rm -rf \
+    /root/go \
     /tmp/*
 
 # add local files
