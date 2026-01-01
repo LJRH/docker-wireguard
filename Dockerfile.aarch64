@@ -11,16 +11,15 @@ LABEL maintainer="thespad"
 
 RUN \
   if [ -z ${WIREGUARD_RELEASE+x} ]; then \
-  WIREGUARD_RELEASE=$(curl -sL "http://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz" | tar -xz -C /tmp \
+  WIREGUARD_RELEASE=$(curl -sL "http://dl-cdn.alpinelinux.org/alpine/v3.22/main/aarch64/APKINDEX.tar.gz" | tar -xz -C /tmp \
     && awk '/^P:wireguard-tools$/,/V:/' /tmp/APKINDEX | sed -n 2p | sed 's/^V://'); \
   fi && \
   echo "**** install dependencies ****" && \
+  apk update && \
+  apk upgrade && \
   apk add --no-cache \
     bc \
-    git \
-    go \
     grep \
-    make \
     iproute2 \
     iptables \
     ip6tables \
@@ -31,27 +30,34 @@ RUN \
     net-tools \
     nftables \
     openresolv \
-    unbound-dev \
     wireguard-tools==${WIREGUARD_RELEASE} && \
+  apk add --no-cache --virtual .build-deps \
+    git \
+    go \
+    make \
+    unbound-dev && \
   echo "wireguard" >> /etc/modules && \
   echo "**** build coredns from source ****" && \
   COREDNS_VERSION=1.13.2 && \
   cd /tmp && \
   git clone --depth 1 --branch v${COREDNS_VERSION} https://github.com/coredns/coredns.git && \
   cd coredns && \
-  go mod edit -go=1.24 && \
+  export GOTOOLCHAIN=go1.25.5 && \
+  go mod edit -go=1.25.5 -toolchain=go1.25.5 && \
+  go get github.com/expr-lang/expr@v1.17.7 && \
   go mod tidy && \
   CGO_ENABLED=1 make && \
   install -Dm755 coredns /usr/bin/coredns && \
   cd / && \
   rm -rf /tmp/coredns && \
-  apk del git go make unbound-dev && \
+  apk del .build-deps && \
   sed -i 's|\[\[ $proto == -4 \]\] && cmd sysctl -q net\.ipv4\.conf\.all\.src_valid_mark=1|[[ $proto == -4 ]] \&\& [[ $(sysctl -n net.ipv4.conf.all.src_valid_mark) != 1 ]] \&\& cmd sysctl -q net.ipv4.conf.all.src_valid_mark=1|' /usr/bin/wg-quick && \
   rm -rf /etc/wireguard && \
   ln -s /config/wg_confs /etc/wireguard && \
   printf "Linuxserver.io version: ${VERSION}\nBuild-date: ${BUILD_DATE}" > /build_version && \
   echo "**** clean up ****" && \
   rm -rf \
+    /root/go \
     /tmp/*
 
 # add local files

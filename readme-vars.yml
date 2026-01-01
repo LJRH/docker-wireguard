@@ -158,6 +158,7 @@ init_diagram: |
   "wireguard:latest" <- Base Images
 # changelog
 changelogs:
+  - {date: "01.01.26:", desc: "Update CoreDNS build to use Go 1.25.5 and update dependencies to fix CVEs. Add apk upgrade to build process."}
   - {date: "22.12.25:", desc: "Build CoreDNS from source with Go 1.24.11 to fix security vulnerabilities (CVE-2025-22871 and others)."}
   - {date: "15.07.25:", desc: "Rebase to Alpine 3.22. Remove iptables-legacy shim."}
   - {date: "01.01.25:", desc: "Deprecate legacy branch."}

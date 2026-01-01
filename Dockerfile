@@ -16,12 +16,10 @@ RUN \
   fi && \
   echo "**** install dependencies ****" && \
   apk update && \
+  apk upgrade && \
   apk add --no-cache \
     bc \
-    git \
-    go \
     grep \
-    make \
     iproute2 \
     iptables \
     ip6tables \
@@ -32,8 +30,12 @@ RUN \
     net-tools \
     nftables \
     openresolv \
-    unbound-dev \
     wireguard-tools==${WIREGUARD_RELEASE} && \
+  apk add --no-cache --virtual .build-deps \
+    git \
+    go \
+    make \
+    unbound-dev && \
   echo "wireguard" >> /etc/modules && \
   echo "**** build coredns from source ****" && \
   COREDNS_VERSION=1.13.2 && \
@@ -48,7 +50,7 @@ RUN \
   install -Dm755 coredns /usr/bin/coredns && \
   cd / && \
   rm -rf /tmp/coredns && \
-  apk del git go make unbound-dev && \
+  apk del .build-deps && \
   sed -i 's|\[\[ $proto == -4 \]\] && cmd sysctl -q net\.ipv4\.conf\.all\.src_valid_mark=1|[[ $proto == -4 ]] \&\& [[ $(sysctl -n net.ipv4.conf.all.src_valid_mark) != 1 ]] \&\& cmd sysctl -q net.ipv4.conf.all.src_valid_mark=1|' /usr/bin/wg-quick && \
   rm -rf /etc/wireguard && \
   ln -s /config/wg_confs /etc/wireguard && \
