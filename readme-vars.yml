@@ -158,6 +158,7 @@ init_diagram: |
   "wireguard:latest" <- Base Images
 # changelog
 changelogs:
+  - {date: "11.03.26:", desc: "Upgrade Go toolchain to 1.26.1 for CoreDNS build."}
   - {date: "02.03.26:", desc: "Update CoreDNS to 1.14.1 and Go to 1.25.7 to fix CVE-2025-61728, CVE-2025-61726, CVE-2025-68121, CVE-2025-61731, CVE-2025-68119 and additional security fixes in crypto/tls."}
   - {date: "01.01.26:", desc: "Update CoreDNS build to use Go 1.25.5 and update dependencies to fix CVEs. Add apk upgrade to build process."}
   - {date: "22.12.25:", desc: "Build CoreDNS from source with Go 1.24.11 to fix security vulnerabilities (CVE-2025-22871 and others)."}

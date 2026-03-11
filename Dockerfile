@@ -40,7 +40,7 @@ RUN \
   cd /tmp && \
   git clone --depth 1 --branch v${COREDNS_VERSION} https://github.com/coredns/coredns.git && \
   cd coredns && \
-  CGO_ENABLED=1 make GOLANG_VERSION=1.25.7 && \
+  CGO_ENABLED=1 make GOLANG_VERSION=1.26.1 && \
   install -Dm755 coredns /usr/bin/coredns && \
   cd / && \
   rm -rf /tmp/coredns && \
