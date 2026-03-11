@@ -36,7 +36,7 @@ RUN \
     unbound-dev && \
   echo "wireguard" >> /etc/modules && \
   echo "**** build coredns from source ****" && \
-  COREDNS_VERSION=1.14.1 && \
+  COREDNS_VERSION=1.14.2 && \
   cd /tmp && \
   git clone --depth 1 --branch v${COREDNS_VERSION} https://github.com/coredns/coredns.git && \
   cd coredns && \
