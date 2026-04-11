@@ -158,6 +158,8 @@ init_diagram: |
   "wireguard:latest" <- Base Images
 # changelog
 changelogs:
+  - {date: "11.04.26:", desc: "Rebase to Alpine 3.23. Upgrade Go toolchain to 1.26.2 to fix CVE-2026-32283 (crypto/tls deadlock) and CVE-2026-27140 (cmd/go build-time code execution). Update APKINDEX URL to v3.23."}
+  - {date: "28.03.26:", desc: "Pin google.golang.org/grpc to v1.79.3 in CoreDNS build to fix CVE-2026-33186."}
   - {date: "11.03.26:", desc: "Update CoreDNS to 1.14.2 to fix CVE-2026-26017 and CVE-2026-26018."}
   - {date: "11.03.26:", desc: "Upgrade Go toolchain to 1.26.1 for CoreDNS build."}
   - {date: "02.03.26:", desc: "Update CoreDNS to 1.14.1 and Go to 1.25.7 to fix CVE-2025-61728, CVE-2025-61726, CVE-2025-68121, CVE-2025-61731, CVE-2025-68119 and additional security fixes in crypto/tls."}

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM ghcr.io/linuxserver/baseimage-alpine:3.22
+FROM ghcr.io/linuxserver/baseimage-alpine:3.23
 
 # set version label
 ARG BUILD_DATE
@@ -11,7 +11,7 @@ LABEL maintainer="thespad"
 
 RUN \
   if [ -z ${WIREGUARD_RELEASE+x} ]; then \
-  WIREGUARD_RELEASE=$(curl -sL "http://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz" | tar -xz -C /tmp \
+  WIREGUARD_RELEASE=$(curl -sL "http://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/APKINDEX.tar.gz" | tar -xz -C /tmp \
     && awk '/^P:wireguard-tools$/,/V:/' /tmp/APKINDEX | sed -n 2p | sed 's/^V://'); \
   fi && \
   echo "**** install dependencies ****" && \
@@ -40,7 +40,9 @@ RUN \
   cd /tmp && \
   git clone --depth 1 --branch v${COREDNS_VERSION} https://github.com/coredns/coredns.git && \
   cd coredns && \
-  CGO_ENABLED=1 make GOLANG_VERSION=1.26.1 && \
+  GOTOOLCHAIN=go1.26.2 go get google.golang.org/grpc@v1.79.3 && \
+  GOTOOLCHAIN=go1.26.2 go mod tidy && \
+  CGO_ENABLED=1 make GOLANG_VERSION=1.26.2 && \
   install -Dm755 coredns /usr/bin/coredns && \
   cd / && \
   rm -rf /tmp/coredns && \
