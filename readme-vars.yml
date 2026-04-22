@@ -158,6 +158,7 @@ init_diagram: |
   "wireguard:latest" <- Base Images
 # changelog
 changelogs:
+  - {date: "22.04.26:", desc: "Remove jq from image to fix CVE-2026-32316 (heap buffer overflow). No fix available in Alpine 3.23 packages."}
   - {date: "11.04.26:", desc: "Rebase to Alpine 3.23. Upgrade Go toolchain to 1.26.2 to fix CVE-2026-32283 (crypto/tls deadlock) and CVE-2026-27140 (cmd/go build-time code execution). Update APKINDEX URL to v3.23."}
   - {date: "28.03.26:", desc: "Pin google.golang.org/grpc to v1.79.3 in CoreDNS build to fix CVE-2026-33186."}
   - {date: "11.03.26:", desc: "Update CoreDNS to 1.14.2 to fix CVE-2026-26017 and CVE-2026-26018."}

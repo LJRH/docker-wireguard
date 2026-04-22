@@ -47,7 +47,7 @@ RUN \
   cd / && \
   rm -rf /tmp/coredns && \
   apk del .build-deps && \
-  apk del curl coreutils && \
+  apk del curl coreutils jq && \
   sed -i 's|\[\[ $proto == -4 \]\] && cmd sysctl -q net\.ipv4\.conf\.all\.src_valid_mark=1|[[ $proto == -4 ]] \&\& [[ $(sysctl -n net.ipv4.conf.all.src_valid_mark) != 1 ]] \&\& cmd sysctl -q net.ipv4.conf.all.src_valid_mark=1|' /usr/bin/wg-quick && \
   rm -rf /etc/wireguard && \
   ln -s /config/wg_confs /etc/wireguard && \
