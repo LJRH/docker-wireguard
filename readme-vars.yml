@@ -158,6 +158,7 @@ init_diagram: |
   "wireguard:latest" <- Base Images
 # changelog
 changelogs:
+  - {date: "27.05.26:", desc: "Bump golang.org/x/net pin to v0.55.0 to fix CVE-2026-39821 (CRITICAL, CVSS 10.0 — IDNA Punycode validation bypass in ToASCII/ToUnicode)."}
   - {date: "23.05.26:", desc: "Update CoreDNS to 1.14.3 (fixes CVE-2026-33190, CVE-2026-32936, CVE-2026-32934, CVE-2026-35579, CVE-2026-33489) and Go toolchain to 1.26.3 (fixes CVE-2026-42499, CVE-2026-39836, CVE-2026-39820, CVE-2026-33814, CVE-2026-33811). Pin golang.org/x/crypto to v0.52.0 (CVE-2026-46597) and golang.org/x/net to v0.53.0 (CVE-2026-33814) in CoreDNS build."}
   - {date: "22.04.26:", desc: "Remove jq from image to fix CVE-2026-32316 (heap buffer overflow). No fix available in Alpine 3.23 packages."}
   - {date: "11.04.26:", desc: "Rebase to Alpine 3.23. Upgrade Go toolchain to 1.26.2 to fix CVE-2026-32283 (crypto/tls deadlock) and CVE-2026-27140 (cmd/go build-time code execution). Update APKINDEX URL to v3.23."}

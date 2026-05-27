@@ -42,7 +42,7 @@ RUN \
   cd coredns && \
   GOTOOLCHAIN=go1.26.3 go get google.golang.org/grpc@v1.79.3 && \
   GOTOOLCHAIN=go1.26.3 go mod edit -replace=golang.org/x/crypto=golang.org/x/crypto@v0.52.0 && \
-  GOTOOLCHAIN=go1.26.3 go mod edit -replace=golang.org/x/net=golang.org/x/net@v0.53.0 && \
+  GOTOOLCHAIN=go1.26.3 go mod edit -replace=golang.org/x/net=golang.org/x/net@v0.55.0 && \
   GOTOOLCHAIN=go1.26.3 go mod tidy && \
   CGO_ENABLED=1 make GOLANG_VERSION=1.26.3 && \
   install -Dm755 coredns /usr/bin/coredns && \
