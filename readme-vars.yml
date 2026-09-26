@@ -153,11 +153,12 @@ init_diagram: |
     svc-wireguard -> legacy-services
   }
   Base Images: {
-    "baseimage-alpine:3.22"
+    "baseimage-alpine:3.24"
   }
   "wireguard:latest" <- Base Images
 # changelog
 changelogs:
+  - {date: "26.09.26:", desc: "Rebase to Alpine 3.24, aligning with upstream. Brings wireguard-tools 1.0.20260223-r0 and busybox 1.37.0-r31, which clears CVE-2025-60876. Drop `unbound-dev` from build deps (CoreDNS has no unbound plugin, so libunbound was never linked). Drop the `wg-quick` sysctl sed patch, now redundant as wireguard-tools 1.0.20260223 ships the src_valid_mark guard upstream. Consolidate the repeated `GOTOOLCHAIN` pins into one variable; Alpine 3.24 ships Go 1.26.8, so the toolchain no longer needs downloading at build time. Add `iputils` to match upstream's package list. `net-tools` is deliberately omitted: nothing in the image uses it and it carries unfixed CVE-2025-46836."}
   - {date: "06.09.26:", desc: "Update CoreDNS to 1.14.7 and Go toolchain to 1.26.8 (fixes CVE-2026-39821, CVE-2026-56862, CVE-2026-56859, CVE-2026-56853, CVE-2026-46600, CVE-2026-42504, CVE-2026-33818 and further stdlib CVEs). Pin google.golang.org/grpc to v1.83.2 (GHSA-hrxh-6v49-42gf, CVE-2026-84304), go.etcd.io/etcd/client to v3.6.14 (CVE-2026-73500), golang.org/x/crypto to v0.56.0 (CVE-2026-78662, CVE-2026-56855, CVE-2026-56854) and golang.org/x/mod to v0.40.0 (CVE-2026-56865, CVE-2026-56864). Drop x/net pin as CoreDNS 1.14.7 already requires v0.57.0. Rebuild picks up OpenSSL 3.5.8-r0 from Alpine (CVE-2026-63073, CVE-2026-75803, CVE-2026-34182 and others)."}
   - {date: "27.05.26:", desc: "Bump golang.org/x/net pin to v0.55.0 to fix CVE-2026-39821 (CRITICAL, CVSS 10.0 — IDNA Punycode validation bypass in ToASCII/ToUnicode)."}
   - {date: "23.05.26:", desc: "Update CoreDNS to 1.14.3 (fixes CVE-2026-33190, CVE-2026-32936, CVE-2026-32934, CVE-2026-35579, CVE-2026-33489) and Go toolchain to 1.26.3 (fixes CVE-2026-42499, CVE-2026-39836, CVE-2026-39820, CVE-2026-33814, CVE-2026-33811). Pin golang.org/x/crypto to v0.52.0 (CVE-2026-46597) and golang.org/x/net to v0.53.0 (CVE-2026-33814) in CoreDNS build."}
