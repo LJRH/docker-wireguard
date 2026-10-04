@@ -14,7 +14,7 @@ The upstream image installs CoreDNS from the Alpine repository. That package is 
 * Removes all build dependencies afterwards, so image size matches upstream
 * Is rebuilt with `--pull --no-cache` so the latest Alpine 3.24 package fixes (OpenSSL etc.) are always included
 
-Every release is scanned with Docker Scout before it is pushed. As of the current build the scan reports **0 critical and 0 high** findings. The remaining findings have no remediation available: three `pcre2` advisories that Alpine has not yet marked fixed even though 10.48 contains the upstream fixes, and `golang.org/x/crypto` GO-2026-5932, which has no fixed version in any release.
+Every release is scanned with Docker Scout before it is pushed. The current build reports **0 critical, 0 high, 0 medium and 0 low** findings. One advisory remains outstanding, `golang.org/x/crypto` GO-2026-5932, which has no fixed version in any release.
 
 ### Current build
 
@@ -24,7 +24,8 @@ Every release is scanned with Docker Scout before it is pushed. As of the curren
 | CoreDNS | 1.14.7 (built from source) |
 | Go toolchain | 1.26.8 |
 | wireguard-tools | 1.0.20260223-r0 |
-| OpenSSL | 3.5.8-r0 |
+| OpenSSL | 3.5.9-r0 |
+| PCRE2 | 10.49-r0 |
 
 Verify the CoreDNS build inside the image:
 
@@ -340,6 +341,7 @@ To bump CoreDNS or Go, change `COREDNS_VERSION` and the `GOTOOLCHAIN` / `GOLANG_
 
 Fork changelog (security-patch releases only; see the upstream repository for the full history):
 
+* **04.10.26:** - Rebuild against current Alpine 3.24 packages to fix CVE-2026-103111 (HIGH, out-of-bounds write in PCRE2 JIT with an attacker-controlled pattern), picking up pcre2 10.49-r0. Also pulls libpng 1.6.59-r0 (CVE-2026-46675) and OpenSSL 3.5.9-r0. No Dockerfile changes: the existing `apk upgrade` step plus a `--pull --no-cache` rebuild delivers all three.
 * **26.09.26:** - Rebase to Alpine 3.24, aligning with upstream. Brings wireguard-tools 1.0.20260223-r0 and busybox 1.37.0-r31, which clears CVE-2025-60876. Drop `unbound-dev` from build deps (CoreDNS has no unbound plugin, so libunbound was never linked). Drop the `wg-quick` sysctl sed patch, now redundant as wireguard-tools 1.0.20260223 ships the src_valid_mark guard upstream. Consolidate the repeated `GOTOOLCHAIN` pins into one variable; Alpine 3.24 ships Go 1.26.8, so the toolchain no longer needs downloading at build time. Add `iputils` to match upstream's package list. `net-tools` is deliberately omitted: nothing in the image uses it and it carries unfixed CVE-2025-46836.
 * **06.09.26:** - Update CoreDNS to 1.14.7 and Go toolchain to 1.26.8 (fixes CVE-2026-39821, CVE-2026-56862, CVE-2026-56859, CVE-2026-56853, CVE-2026-46600, CVE-2026-42504, CVE-2026-33818 and further stdlib CVEs). Pin google.golang.org/grpc to v1.83.2 (GHSA-hrxh-6v49-42gf, CVE-2026-84304), go.etcd.io/etcd/client to v3.6.14 (CVE-2026-73500), golang.org/x/crypto to v0.56.0 (CVE-2026-78662, CVE-2026-56855, CVE-2026-56854) and golang.org/x/mod to v0.40.0 (CVE-2026-56865, CVE-2026-56864). Drop x/net pin as CoreDNS 1.14.7 already requires v0.57.0. Rebuild picks up OpenSSL 3.5.8-r0 from Alpine (CVE-2026-63073, CVE-2026-75803, CVE-2026-34182 and others).
 * **27.05.26:** - Bump golang.org/x/net pin to v0.55.0 to fix CVE-2026-39821 (CRITICAL, CVSS 10.0 — IDNA Punycode validation bypass in ToASCII/ToUnicode).
