@@ -22,7 +22,7 @@ Every release is scanned with Docker Scout before it is pushed. The current buil
 |---|---|
 | Base image | `ghcr.io/linuxserver/baseimage-alpine:3.24` |
 | CoreDNS | 1.14.7 (built from source) |
-| Go toolchain | 1.26.8 |
+| Go toolchain | 1.26.10 |
 | wireguard-tools | 1.0.20260223-r0 |
 | OpenSSL | 3.5.9-r0 |
 | PCRE2 | 10.49-r0 |
@@ -32,7 +32,7 @@ Verify the CoreDNS build inside the image:
 ```bash
 docker run --rm --entrypoint /usr/bin/coredns ljrh/wireguard:latest -version
 # CoreDNS-1.14.7
-# linux/amd64, go1.26.8, ...
+# linux/amd64, go1.26.10, ...
 ```
 
 ## Supported Architectures
@@ -53,7 +53,7 @@ All tags from a given release point at the same image digest.
 | `latest` | Most recent security-patched build. Pull this for automatic updates. |
 | `YYYYMMDD` (e.g. `20260906`) | Immutable date-stamped build for pinned production deployments. |
 | `coredns-1.14.7` | Same build, tagged by the CoreDNS release it contains. |
-| `patched-go1.26.8` | Same build, tagged by the Go toolchain used to compile CoreDNS. |
+| `patched-go1.26.10` | Same build, tagged by the Go toolchain used to compile CoreDNS. |
 
 ## Application Setup
 
@@ -341,6 +341,7 @@ To bump CoreDNS or Go, change `COREDNS_VERSION` and the `GOTOOLCHAIN` / `GOLANG_
 
 Fork changelog (security-patch releases only; see the upstream repository for the full history):
 
+* **21.10.26:** - Upgrade Go toolchain to 1.26.10 and pin golang.org/x/net to v0.61.0 to fix two CRITICAL CVEs: CVE-2026-56857 (Go stdlib) and CVE-2026-78663 (Go stdlib and x/net). Also clears 14 HIGH and 2 MEDIUM findings in the Go stdlib and x/net, including CVE-2026-97032, CVE-2026-97031, CVE-2026-94440, CVE-2026-94439, CVE-2026-78669, CVE-2026-78667, CVE-2026-78660, CVE-2026-78659, CVE-2026-56866 and CVE-2026-111943. Rebuild picks up zlib 1.3.2-r1 from Alpine (CVE-2026-85091, HIGH).
 * **04.10.26:** - Rebuild against current Alpine 3.24 packages to fix CVE-2026-103111 (HIGH, out-of-bounds write in PCRE2 JIT with an attacker-controlled pattern), picking up pcre2 10.49-r0. Also pulls libpng 1.6.59-r0 (CVE-2026-46675) and OpenSSL 3.5.9-r0. No Dockerfile changes: the existing `apk upgrade` step plus a `--pull --no-cache` rebuild delivers all three.
 * **26.09.26:** - Rebase to Alpine 3.24, aligning with upstream. Brings wireguard-tools 1.0.20260223-r0 and busybox 1.37.0-r31, which clears CVE-2025-60876. Drop `unbound-dev` from build deps (CoreDNS has no unbound plugin, so libunbound was never linked). Drop the `wg-quick` sysctl sed patch, now redundant as wireguard-tools 1.0.20260223 ships the src_valid_mark guard upstream. Consolidate the repeated `GOTOOLCHAIN` pins into one variable; Alpine 3.24 ships Go 1.26.8, so the toolchain no longer needs downloading at build time. Add `iputils` to match upstream's package list. `net-tools` is deliberately omitted: nothing in the image uses it and it carries unfixed CVE-2025-46836.
 * **06.09.26:** - Update CoreDNS to 1.14.7 and Go toolchain to 1.26.8 (fixes CVE-2026-39821, CVE-2026-56862, CVE-2026-56859, CVE-2026-56853, CVE-2026-46600, CVE-2026-42504, CVE-2026-33818 and further stdlib CVEs). Pin google.golang.org/grpc to v1.83.2 (GHSA-hrxh-6v49-42gf, CVE-2026-84304), go.etcd.io/etcd/client to v3.6.14 (CVE-2026-73500), golang.org/x/crypto to v0.56.0 (CVE-2026-78662, CVE-2026-56855, CVE-2026-56854) and golang.org/x/mod to v0.40.0 (CVE-2026-56865, CVE-2026-56864). Drop x/net pin as CoreDNS 1.14.7 already requires v0.57.0. Rebuild picks up OpenSSL 3.5.8-r0 from Alpine (CVE-2026-63073, CVE-2026-75803, CVE-2026-34182 and others).

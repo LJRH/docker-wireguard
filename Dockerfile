@@ -37,7 +37,7 @@ RUN \
   echo "wireguard" >> /etc/modules && \
   echo "**** build coredns from source ****" && \
   COREDNS_VERSION=1.14.7 && \
-  GOLANG_VERSION=1.26.8 && \
+  GOLANG_VERSION=1.26.10 && \
   export GOTOOLCHAIN=go${GOLANG_VERSION} && \
   cd /tmp && \
   git clone --depth 1 --branch v${COREDNS_VERSION} https://github.com/coredns/coredns.git && \
@@ -47,6 +47,7 @@ RUN \
     go.etcd.io/etcd/client/pkg/v3@v3.6.14 && \
   go mod edit -replace=golang.org/x/crypto=golang.org/x/crypto@v0.56.0 && \
   go mod edit -replace=golang.org/x/mod=golang.org/x/mod@v0.40.0 && \
+  go mod edit -replace=golang.org/x/net=golang.org/x/net@v0.61.0 && \
   go mod tidy && \
   CGO_ENABLED=1 make GOLANG_VERSION=${GOLANG_VERSION} && \
   install -Dm755 coredns /usr/bin/coredns && \
