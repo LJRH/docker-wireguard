@@ -10,6 +10,9 @@
 #
 # Requires two repository secrets for Docker Scout authentication:
 #   DOCKERHUB_USERNAME, DOCKERHUB_TOKEN  (a read-only access token is enough)
+#
+# Note: the schedule only fires from this repository's default branch, which
+# for this fork is security-patches.
 name: Weekly security scan
 
 on:
@@ -50,58 +53,60 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # Publishes the findings to the run summary and fails the step when
+      # anything fixable at these severities is present. Unfixable advisories
+      # are excluded by only-fixed, so permanent ones never gate the job.
+      # The input is only-severities, plural, unlike the CLI's --only-severity.
       - name: Scan for fixable critical and high findings
         id: scout
         uses: docker/scout-action@v1
         with:
           command: cves
           image: wireguard-scan-candidate:latest
+          platform: linux/amd64
           only-fixed: true
-          only-severity: critical,high
+          only-severities: critical,high
           exit-code: true
-          write-comment: false
           summary: true
+          write-comment: false
 
-      - name: Record the full report
+      # Context for the maintainer: the full picture including the unfixable
+      # advisories, so the summary shows what was excluded above.
+      - name: Record the full picture in the run summary
         if: always()
         uses: docker/scout-action@v1
         with:
           command: cves
           image: wireguard-scan-candidate:latest
-          format: markdown
-          output: scan-report.md
+          platform: linux/amd64
+          summary: true
           write-comment: false
 
       - name: Open an issue when something is fixable
         if: failure() && steps.scout.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           {
             echo "The weekly rebuild found vulnerabilities that have a fix available."
             echo
-            echo "Published \`latest\` is unaffected until a new build is pushed, but it"
-            echo "carries the same pins, so assume it is affected too."
+            echo "Findings are in the [run summary]($RUN_URL). Published \`latest\` carries"
+            echo "the same pins as this build, so assume it is affected too."
             echo
             echo "Next steps:"
             echo
             echo '1. `scripts/check-versions.sh` to find the fixed versions.'
-            echo '2. Bump pins in **both** Dockerfiles, or rebuild if the fix is an apk package.'
-            echo '3. `scripts/release.sh --no-push` then `scripts/release.sh`.'
-            echo '4. Changelog entry in `readme-vars.yml`, refresh `overview.md`.'
+            echo '2. Bump pins in **both** Dockerfiles, or just rebuild if the fix is an apk package.'
+            echo '3. `scripts/release.sh --no-push`, then `scripts/release.sh`.'
+            echo '4. Changelog entry in `readme-vars.yml`, refresh `overview.md`, commit and push.'
             echo
-            echo "<details><summary>Full Scout report</summary>"
-            echo
-            cat scan-report.md 2>/dev/null || echo "report not captured"
-            echo
-            echo "</details>"
-            echo
-            echo "_Opened automatically by \`.github/workflows/security-scan.yml\` (run $GITHUB_RUN_ID)._"
+            echo "_Opened automatically by \`.github/workflows/security-scan.yml\`._"
           } > issue-body.md
 
           title="Fixable vulnerabilities found in weekly scan ($(date -u +%Y-%m-%d))"
           existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
-            --search "Fixable vulnerabilities found in weekly scan in:title" \
+            --search 'Fixable vulnerabilities found in weekly scan in:title' \
             --json number --jq '.[0].number' 2>/dev/null || true)"
 
           if [[ -n "$existing" ]]; then
@@ -109,11 +114,3 @@ jobs:
           else
             gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file issue-body.md
           fi
-
-      - name: Upload the report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: scout-report
-          path: scan-report.md
-          if-no-files-found: ignore
