@@ -1,5 +1,10 @@
 # Docker Image Tags - Quick Reference
 
+> **Historical.** This describes the one-time fork publication in Dec 2025 and
+> references `scripts/publish.sh`, which has been removed. For the current
+> release process see the "Release Process" section of `CLAUDE.md`:
+> `scripts/check-versions.sh`, `scripts/scan.sh`, `scripts/release.sh`.
+
 All tags point to the **same image** (same security patches, same functionality).
 
 ## Available Tags
@@ -44,7 +49,7 @@ docker push ljrh/wireguard:coredns-1.13.2
 docker push ljrh/wireguard:patched-go1.25.5
 ```
 
-The `publish.sh` script automatically does this for you.
+`scripts/release.sh` does this for you, deriving the tags from the Dockerfile pins.
 
 ## Quick Decision Guide
 

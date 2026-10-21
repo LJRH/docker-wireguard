@@ -1,5 +1,10 @@
 # Ready to Publish! 🚀
 
+> **Historical.** This describes the one-time fork publication in Dec 2025 and
+> references `scripts/publish.sh`, which has been removed. For the current
+> release process see the "Release Process" section of `CLAUDE.md`:
+> `scripts/check-versions.sh`, `scripts/scan.sh`, `scripts/release.sh`.
+
 All files have been updated with your GitHub username: **LJRH**
 
 ## ✅ Pre-flight Checklist

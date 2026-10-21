@@ -1,0 +1,119 @@
+# Fork-specific: weekly rebuild and vulnerability scan.
+#
+# Not inherited from linuxserver/docker-wireguard. The point is to stop the
+# maintainer being the detection mechanism: CVEs in the Go toolchain and in
+# Alpine packages land between releases, and this surfaces them within a week
+# instead of whenever someone happens to look at Docker Desktop.
+#
+# Scans only. Never pushes an image. Publishing stays a deliberate local act
+# via scripts/release.sh.
+#
+# Requires two repository secrets for Docker Scout authentication:
+#   DOCKERHUB_USERNAME, DOCKERHUB_TOKEN  (a read-only access token is enough)
+name: Weekly security scan
+
+on:
+  schedule:
+    # 07:15 UTC every Monday
+    - cron: '15 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  rebuild-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build amd64 image from current pins
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: true
+          no-cache: true
+          pull: true
+          tags: wireguard-scan-candidate:latest
+
+      - name: Log in to Docker Hub for Scout
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Scan for fixable critical and high findings
+        id: scout
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: wireguard-scan-candidate:latest
+          only-fixed: true
+          only-severity: critical,high
+          exit-code: true
+          write-comment: false
+          summary: true
+
+      - name: Record the full report
+        if: always()
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: wireguard-scan-candidate:latest
+          format: markdown
+          output: scan-report.md
+          write-comment: false
+
+      - name: Open an issue when something is fixable
+        if: failure() && steps.scout.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "The weekly rebuild found vulnerabilities that have a fix available."
+            echo
+            echo "Published \`latest\` is unaffected until a new build is pushed, but it"
+            echo "carries the same pins, so assume it is affected too."
+            echo
+            echo "Next steps:"
+            echo
+            echo '1. `scripts/check-versions.sh` to find the fixed versions.'
+            echo '2. Bump pins in **both** Dockerfiles, or rebuild if the fix is an apk package.'
+            echo '3. `scripts/release.sh --no-push` then `scripts/release.sh`.'
+            echo '4. Changelog entry in `readme-vars.yml`, refresh `overview.md`.'
+            echo
+            echo "<details><summary>Full Scout report</summary>"
+            echo
+            cat scan-report.md 2>/dev/null || echo "report not captured"
+            echo
+            echo "</details>"
+            echo
+            echo "_Opened automatically by \`.github/workflows/security-scan.yml\` (run $GITHUB_RUN_ID)._"
+          } > issue-body.md
+
+          title="Fixable vulnerabilities found in weekly scan ($(date -u +%Y-%m-%d))"
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search "Fixable vulnerabilities found in weekly scan in:title" \
+            --json number --jq '.[0].number' 2>/dev/null || true)"
+
+          if [[ -n "$existing" ]]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body-file issue-body.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file issue-body.md
+          fi
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scout-report
+          path: scan-report.md
+          if-no-files-found: ignore
