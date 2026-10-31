@@ -143,8 +143,8 @@ underlying facts change.
 - **Alpine's security database lags upstream.** In Sept 2026 Scout reported three
   pcre2 CVEs as unfixed at every version when 10.48 already contained the fixes;
   they aged off once Alpine recorded the data. Check the upstream project's release
-  notes before acting on an apk advisory marked "not fixed". `scan.sh --only-fixed`
-  avoids this class of noise entirely.
+  notes before acting on an apk advisory marked "not fixed". `scan.sh` keeps this
+  class of noise out of the blocking tiers.
 
 ## Go Toolchain Mechanics
 
