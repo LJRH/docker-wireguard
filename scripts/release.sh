@@ -127,11 +127,14 @@ fi
 
 # -------------------------------------------------------------------- 4. scan
 step "Scanning for fixable findings"
-if SEVERITY="critical,high" "${REPO_ROOT}/scripts/scan.sh" "${STAGING}" >/tmp/release-scan.$$ 2>&1; then
-  ok "no fixable critical or high findings"
-  grep -A2 'Unfixable advisories' /tmp/release-scan.$$ | tail -n +2 | sed 's/^/      /'
+# No overrides: scan.sh decides what blocks. It gates on every Go finding
+# with a fix at any severity, plus critical/high apk findings, and treats
+# Alpine branch lag as informational.
+if "${REPO_ROOT}/scripts/scan.sh" "${STAGING}" >/tmp/release-scan.$$ 2>&1; then
+  ok "nothing blocking"
+  sed -n '/no fix at any version/,$p' /tmp/release-scan.$$ | grep -E '^pkg:|✗' | sed 's/^/      /' || true
 else
-  bad "fixable critical or high findings present, release blocked"
+  bad "fixable findings present, release blocked"
   sed 's/^/      /' /tmp/release-scan.$$
 fi
 rm -f /tmp/release-scan.$$

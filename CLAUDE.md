@@ -74,7 +74,7 @@ Three scripts cover the whole loop. Run them from the repo root.
 
 ```bash
 scripts/check-versions.sh          # what we pin vs what is available upstream
-scripts/scan.sh [image]            # fixable findings only; exit 2 means act
+scripts/scan.sh [image]            # tiered: exit 2 means act now
 scripts/release.sh --no-push       # build, verify, scan, smoke-test (dry run)
 scripts/release.sh                 # same, then tag and push (prompts first)
 ```
@@ -84,6 +84,14 @@ the Dockerfile pins against the latest Go patch, the latest CoreDNS tags, the Go
 module proxy, and Alpine's branch index. It also runs `apk version -l '<'` inside
 the published image, which is the authoritative way to see whether a plain rebuild
 would pick up newer packages.
+
+`scan.sh` splits findings into three tiers rather than one list. Every Go
+finding with a fix blocks, at any severity, because Go's vulnerability database
+frequently omits a CVSS score and those land as "unspecified". Alpine package
+findings block only at critical or high. Anything lower from apk is reported but
+does not block, because it is usually branch lag: the fixed release exists
+upstream but has not reached our Alpine branch, so no rebuild can clear it.
+`check-versions.sh` tells you when the branch has caught up.
 
 `release.sh` derives its tags from the Dockerfile pins, so tags can never claim a
 version the image does not contain. It publishes four: `latest`, the date,
@@ -123,6 +131,15 @@ underlying facts change.
   so libunbound was never linked.
 - **The `wg-quick` sysctl sed patch was removed.** wireguard-tools 1.0.20260223
   ships the `src_valid_mark` guard upstream, so the patch had become a silent no-op.
+- **Module pins are a last resort, not a habit.** Each CoreDNS release already
+  requires reasonably current modules. In Oct 2026 the grpc, etcd, x/crypto and
+  x/mod pins had silently become *downgrades* relative to CoreDNS 1.15.0 and
+  were dropped. Add a pin only when the scan flags something the CoreDNS release
+  does not already satisfy, and drop it again at the next CoreDNS bump.
+- **A critical/high scan gate is not enough for Go.** Go advisories often carry
+  no CVSS score, so they arrive as "unspecified". Two fixable x/net advisories
+  passed a critical/high gate in Oct 2026. The gate now blocks on any Go finding
+  with a fix. See the Release Process section for the tiers.
 - **Alpine's security database lags upstream.** In Sept 2026 Scout reported three
   pcre2 CVEs as unfixed at every version when 10.48 already contained the fixes;
   they aged off once Alpine recorded the data. Check the upstream project's release

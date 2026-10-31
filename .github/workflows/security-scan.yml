@@ -57,7 +57,11 @@ jobs:
       # anything fixable at these severities is present. Unfixable advisories
       # are excluded by only-fixed, so permanent ones never gate the job.
       # The input is only-severities, plural, unlike the CLI's --only-severity.
-      - name: Scan for fixable critical and high findings
+      # Tier 1: every Go finding that has a fix, at any severity. Always
+      # actionable, since we control the toolchain pin and module replaces.
+      # Go's vuln db often omits a CVSS score, so these arrive as
+      # "unspecified" and a critical/high gate would skip them.
+      - name: Scan Go packages for anything fixable
         id: scout
         uses: docker/scout-action@v1
         with:
@@ -65,6 +69,25 @@ jobs:
           image: wireguard-scan-candidate:latest
           platform: linux/amd64
           only-fixed: true
+          only-package-types: golang
+          exit-code: true
+          summary: true
+          write-comment: false
+
+      # Tier 2: Alpine packages, but only critical and high. Lower-severity
+      # apk findings are usually branch lag, where the fixed release exists
+      # upstream but is not in our Alpine branch yet, so a rebuild cannot
+      # clear them and they must not fail the job.
+      - name: Scan Alpine packages for fixable critical and high
+        id: scout_apk
+        if: always()
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: wireguard-scan-candidate:latest
+          platform: linux/amd64
+          only-fixed: true
+          only-package-types: apk
           only-severities: critical,high
           exit-code: true
           summary: true
@@ -83,7 +106,7 @@ jobs:
           write-comment: false
 
       - name: Open an issue when something is fixable
-        if: failure() && steps.scout.outcome == 'failure'
+        if: failure() && (steps.scout.outcome == 'failure' || steps.scout_apk.outcome == 'failure')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
