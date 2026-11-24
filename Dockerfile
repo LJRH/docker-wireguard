@@ -37,12 +37,18 @@ RUN \
   echo "wireguard" >> /etc/modules && \
   echo "**** build coredns from source ****" && \
   COREDNS_VERSION=1.15.0 && \
-  GOLANG_VERSION=1.27.3 && \
+  GOLANG_VERSION=1.27.4 && \
   export GOTOOLCHAIN=go${GOLANG_VERSION} && \
   cd /tmp && \
   git clone --depth 1 --branch v${COREDNS_VERSION} https://github.com/coredns/coredns.git && \
   cd coredns && \
-  go mod edit -replace=golang.org/x/net=golang.org/x/net@v0.62.0 && \
+  go get \
+    github.com/klauspost/compress@v1.20.4 \
+    go.opentelemetry.io/otel@v1.47.0 \
+    go.opentelemetry.io/otel/metric@v1.47.0 \
+    go.opentelemetry.io/otel/trace@v1.47.0 \
+    golang.org/x/crypto@v0.59.0 \
+    golang.org/x/net@v0.63.0 && \
   go mod tidy && \
   CGO_ENABLED=1 make GOLANG_VERSION=${GOLANG_VERSION} && \
   install -Dm755 coredns /usr/bin/coredns && \

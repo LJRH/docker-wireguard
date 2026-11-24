@@ -145,6 +145,16 @@ underlying facts change.
   they aged off once Alpine recorded the data. Check the upstream project's release
   notes before acting on an apk advisory marked "not fixed". `scan.sh` keeps this
   class of noise out of the blocking tiers.
+- **Scout can match apk fixes against edge's pkgrel, not our branch's.** In Nov
+  2026 it said musl CVE-2026-107891 was fixed only in 1.2.6-r6 (edge), but 3.24
+  had already backported the identical patch in 1.2.6-r3. To check, compare the
+  `3.24-stable` APKBUILD in aports and `secdb.alpinelinux.org/v3.24/main.json`.
+  Proven false positives go in `vex/` as OpenVEX `not_affected` statements,
+  pinned to the exact package purl so each lapses when the package changes.
+  `scan.sh` and the weekly workflow honour them; the full report does not.
+  The author must be `ljrh-wireguard`, because Scout only trusts `@docker.com`
+  authors unless `--vex-author` says otherwise. Delete a statement once its
+  package version is gone from the image.
 
 ## Go Toolchain Mechanics
 

@@ -12,9 +12,12 @@
 #   BLOCKING   apk findings with a fix at critical or high. Urgent enough to
 #              act on or decide about even if we must wait for the branch.
 #   INFO       apk findings with a fix below that. Usually Alpine branch lag:
-#              the fixed release exists upstream but is not in our branch yet
-#              (musl CVE-2026-107891 wants 1.2.6-r6; 3.24 ships r3). Nothing
-#              a rebuild can do, so it must not block.
+#              the fixed release exists upstream but is not in our branch yet.
+#              Nothing a rebuild can do, so it must not block. Branch lag can
+#              reach the blocking tier too; check-versions.sh tells you whether
+#              a rebuild would help. A "fix" that names edge's pkgrel may
+#              already be backported to our branch: verify, then record it in
+#              vex/ (see below).
 #   INFO       Anything with no fix at any version.
 #
 # Use scripts/check-versions.sh to see whether the branch has caught up.
@@ -55,11 +58,21 @@ fi
 # shellcheck disable=SC2086  # SCOUT may be "docker scout", two words by design
 scout() { ${SCOUT} "$@"; }
 
+# Reviewed false positives live in vex/ as OpenVEX statements, each pinned to
+# the exact package version it covers so it lapses when that package changes.
+# Scout only trusts @docker.com authors by default, hence --vex-author.
+# The --full report ignores VEX so suppressed findings stay visible there.
+VEX_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/vex"
+VEX=()
+if [[ -d "${VEX_DIR}" ]]; then
+  VEX=(--vex-location "${VEX_DIR}" --vex-author ljrh-wireguard)
+fi
+
 blocking=0
 
 printf '== BLOCKING: Go findings with a fix (any severity) ==\n'
 if scout cves "${IMAGE}" --only-fixed --only-package-type golang \
-     --format packages --details --exit-code; then
+     --format packages --details --exit-code "${VEX[@]}"; then
   printf '  none\n'
 else
   blocking=1
@@ -67,19 +80,31 @@ fi
 
 printf '\n== BLOCKING: Alpine package findings with a fix at %s ==\n' "${APK_SEVERITY}"
 if scout cves "${IMAGE}" --only-fixed --only-package-type apk \
-     --only-severity "${APK_SEVERITY}" --format packages --details --exit-code; then
+     --only-severity "${APK_SEVERITY}" --format packages --details --exit-code "${VEX[@]}"; then
   printf '  none\n'
 else
   blocking=1
 fi
 
+# Every severity not already covered by the blocking apk gate.
+APK_BELOW=""
+for sev in critical high medium low unspecified; do
+  [[ ",${APK_SEVERITY}," == *",${sev},"* ]] && continue
+  APK_BELOW="${APK_BELOW:+${APK_BELOW},}${sev}"
+done
+
 printf '\n== INFO: Alpine package findings with a fix below %s ==\n' "${APK_SEVERITY}"
 printf '   (usually branch lag: upstream has the fix, our Alpine branch does not yet)\n'
-scout cves "${IMAGE}" --only-fixed --only-package-type apk --format packages 2>/dev/null \
-  | grep -E '^pkg:|✗' || printf '  none\n'
+if [[ -n "${APK_BELOW}" ]]; then
+  scout cves "${IMAGE}" --only-fixed --only-package-type apk \
+       --only-severity "${APK_BELOW}" --format packages "${VEX[@]}" 2>/dev/null \
+    | grep -E '^pkg:|✗' || printf '  none\n'
+else
+  printf '  none\n'
+fi
 
 printf '\n== INFO: advisories with no fix at any version ==\n'
-scout cves "${IMAGE}" --only-unfixed --format packages 2>/dev/null \
+scout cves "${IMAGE}" --only-unfixed --format packages "${VEX[@]}" 2>/dev/null \
   | grep -E '^pkg:|✗' || printf '  none\n'
 
 if [[ "${FULL}" -eq 1 ]]; then

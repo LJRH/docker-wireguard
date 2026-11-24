@@ -70,6 +70,8 @@ jobs:
           platform: linux/amd64
           only-fixed: true
           only-package-types: golang
+          vex-location: vex
+          vex-author: ljrh-wireguard
           exit-code: true
           summary: true
           write-comment: false
@@ -89,12 +91,15 @@ jobs:
           only-fixed: true
           only-package-types: apk
           only-severities: critical,high
+          vex-location: vex
+          vex-author: ljrh-wireguard
           exit-code: true
           summary: true
           write-comment: false
 
       # Context for the maintainer: the full picture including the unfixable
-      # advisories, so the summary shows what was excluded above.
+      # advisories, so the summary shows what was excluded above. No VEX
+      # here on purpose, so findings suppressed by vex/ stay visible.
       - name: Record the full picture in the run summary
         if: always()
         uses: docker/scout-action@v1
