@@ -235,8 +235,35 @@ for t in "${TAGS[@]}"; do
 done
 docker rmi "${STAGING}" >/dev/null 2>&1 || true
 
+# ------------------------------------------------------------ 8. attach VEX
+# scan.sh reads vex/ locally, but Docker Hub runs its own Scout analysis and
+# never sees the repo. Attaching each statement as an attestation is what makes
+# Hub honour it. This rewrites each tag's image index in the registry, so it
+# must run after the push, and it changes the published digest.
+vex_files=()
+for f in "${REPO_ROOT}"/vex/*.json; do [[ -e "${f}" ]] && vex_files+=(--file "${f}"); done
+if [[ "${#vex_files[@]}" -gt 0 ]]; then
+  step "Attaching VEX statements"
+  SCOUT="${SCOUT:-}"
+  if [[ -z "${SCOUT}" ]]; then
+    if docker scout version >/dev/null 2>&1; then SCOUT="docker scout"
+    else SCOUT="${HOME}/.local/bin/docker-scout"; fi
+  fi
+  vex_images=()
+  for t in "${TAGS[@]}"; do vex_images+=("${REPO}:${t}"); done
+  # shellcheck disable=SC2086  # SCOUT may be "docker scout", two words by design
+  if ${SCOUT} attestation add "${vex_files[@]}" \
+       --predicate-type https://openvex.dev/ns/v0.2.0 "${vex_images[@]}"; then
+    ok "attached $(( ${#vex_files[@]} / 2 )) statement(s) to ${#TAGS[@]} tags"
+  else
+    bad "VEX attestation failed; the image is published but Hub will still show the suppressed findings"
+  fi
+  docker pull -q "${REPO}:latest" >/dev/null 2>&1 || true
+fi
+
 step "Published"
 printf '  digest : %s\n' "$(docker inspect -f '{{index .RepoDigests 0}}' "${REPO}:latest" 2>/dev/null)"
 printf '  tags   : %s\n' "${TAGS[*]}"
-printf '\nNext: changelog entry in readme-vars.yml, refresh overview.md, commit, push.\n'
+printf '\nNext: changelog entry in readme-vars.yml, refresh overview.md, commit, push,\n'
+printf 'paste overview.md into the Hub description, and delete any stale patched-go tag.\n'
 [[ "${FAILURES}" -eq 0 ]] || exit 1

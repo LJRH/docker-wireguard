@@ -9,22 +9,24 @@ A **security-patched build** of [linuxserver/wireguard](https://github.com/linux
 The upstream image installs CoreDNS from the Alpine repository. That package is rebuilt infrequently, so it regularly ships a CoreDNS release and Go toolchain that are several security releases behind. This image instead:
 
 * Clones the pinned CoreDNS release tag at build time
-* Builds it with a pinned, current Go 1.26.x toolchain (`CGO_ENABLED=1`, so `/etc/hosts` and `resolv.conf` behave as upstream)
-* Pins a Go module to a patched version only where the CoreDNS release does not already require one new enough (currently just `golang.org/x/net`)
+* Builds it with a pinned, current Go 1.27.x toolchain (`CGO_ENABLED=1`, so `/etc/hosts` and `resolv.conf` behave as upstream)
+* Pins a Go module to a patched version only where the CoreDNS release does not already require one new enough (currently `klauspost/compress`, the `go.opentelemetry.io/otel` family, `golang.org/x/crypto` and `golang.org/x/net`)
 * Removes all build dependencies afterwards, so image size matches upstream
 * Is rebuilt with `--pull --no-cache` so the latest Alpine 3.24 package fixes (OpenSSL etc.) are always included
 
-Every release is scanned with Docker Scout before it is pushed. The current build reports **0 critical, 0 high, 0 medium and 0 low** findings. Two advisories remain, neither actionable: `golang.org/x/crypto` GO-2026-5932, which has no fixed version in any release, and a `musl` advisory whose fix is not yet in the Alpine 3.24 branch.
+Every release is scanned with Docker Scout before it is pushed. The current build has **no outstanding findings**. Scout lists one HIGH, musl CVE-2026-107891, against `musl 1.2.6-r3`. It is a false positive: Scout names Alpine edge's `1.2.6-r6` as the fix, but Alpine backported the identical patch to 3.24 in `1.2.6-r3`, which this image ships. The image carries an [OpenVEX](https://openvex.dev/) attestation recording this, with the evidence, scoped to that exact musl version ([`vex/`](https://github.com/LJRH/docker-wireguard/tree/security-patches/vex) in the repository).
 
 ### Current build
 
 | Component | Version |
 |---|---|
-| Base image | `ghcr.io/linuxserver/baseimage-alpine:3.24` |
+| Base image | `ghcr.io/linuxserver/baseimage-alpine:3.24` (Alpine 3.24.4) |
 | CoreDNS | 1.15.0 (built from source) |
-| Go toolchain | 1.27.3 |
+| Go toolchain | 1.27.4 |
 | wireguard-tools | 1.0.20260223-r0 |
-| OpenSSL | 3.5.9-r0 |
+| OpenSSL | 3.5.9-r1 |
+| zlib | 1.4-r0 |
+| musl | 1.2.6-r3 (CVE-2026-107891 patched) |
 | PCRE2 | 10.49-r0 |
 
 Verify the CoreDNS build inside the image:
@@ -32,7 +34,7 @@ Verify the CoreDNS build inside the image:
 ```bash
 docker run --rm --entrypoint /usr/bin/coredns ljrh/wireguard:latest -version
 # CoreDNS-1.15.0
-# linux/amd64, go1.27.3, ...
+# linux/amd64, go1.27.4, ...
 ```
 
 ## Supported Architectures
@@ -51,9 +53,9 @@ All tags from a given release point at the same image digest.
 | Tag | Description |
 |---|---|
 | `latest` | Most recent security-patched build. Pull this for automatic updates. |
-| `YYYYMMDD` (e.g. `20260906`) | Immutable date-stamped build for pinned production deployments. |
+| `YYYYMMDD` (e.g. `20261124`) | Immutable date-stamped build for pinned production deployments. |
 | `coredns-1.15.0` | Same build, tagged by the CoreDNS release it contains. |
-| `patched-go1.27.3` | Same build, tagged by the Go toolchain used to compile CoreDNS. |
+| `patched-go1.27.4` | Same build, tagged by the Go toolchain used to compile CoreDNS. |
 
 ## Application Setup
 
@@ -335,12 +337,13 @@ docker build \
 
 On an ARM64 host use `-f Dockerfile.aarch64`. The build clones and compiles CoreDNS, so expect it to take a few minutes longer than the upstream image.
 
-To bump CoreDNS or Go, change `COREDNS_VERSION` and the `GOTOOLCHAIN` / `GOLANG_VERSION` values in **both** Dockerfiles, and adjust the `go get` / `go mod edit -replace` pins as needed.
+To bump CoreDNS or Go, change `COREDNS_VERSION` and the `GOTOOLCHAIN` / `GOLANG_VERSION` values in **both** Dockerfiles, and adjust the `go get` module pins as needed.
 
 ## Versions
 
 Fork changelog (security-patch releases only; see the upstream repository for the full history):
 
+* **24.11.26:** - Rebuild against Alpine 3.24.4 to fix zlib CVE-2026-4738 (CRITICAL, zlib 1.4-r0) and four OpenSSL HIGHs, CVE-2026-95691, CVE-2026-95692, CVE-2026-88823 and CVE-2026-107496 (OpenSSL 3.5.9-r1). Upgrade the Go toolchain to 1.27.4 (CVE-2026-97054, stdlib). Pin github.com/klauspost/compress v1.20.4 (CVE-2026-116591, HIGH), the go.opentelemetry.io/otel family at v1.47.0 (CVE-2026-128085), golang.org/x/crypto v0.59.0 (GO-2026-5932) and golang.org/x/net v0.63.0. Pins now use `go get`, so a pin can never silently downgrade a module. Attach an OpenVEX attestation for musl CVE-2026-107891, a Scout false positive: the fix is already backported to Alpine 3.24's musl 1.2.6-r3.
 * **31.10.26:** - Update CoreDNS to 1.15.0 and the Go toolchain to 1.27.3, adopting the pairing upstream tests (CoreDNS 1.15.0 targets Go 1.27.3). Drop the grpc, etcd, x/crypto and x/mod pins: CoreDNS 1.15.0 already requires newer versions than those pins, which had become downgrades. Keep a single `golang.org/x/net` replace at v0.62.0 to fix CVE-2026-97045 and CVE-2026-78661. Rebuild picks up Alpine 3.24.3 with musl 1.2.6-r3. Widen the release scan gate: every Go finding with a fix now blocks regardless of severity, because Go advisories often carry no CVSS score and a critical/high gate skipped two real x/net issues.
 * **21.10.26:** - Add release tooling: `scripts/check-versions.sh` (compares Dockerfile pins against Alpine, the Go release feed and the Go module proxy), `scripts/scan.sh` (Docker Scout wrapper that separates fixable findings from unfixable advisories and sets its exit code off the former), and `scripts/release.sh` (build, verify against the pins, scan, container smoke test, then tag and push). Add `.github/workflows/security-scan.yml` for a weekly rebuild and scan that opens an issue on fixable findings. Remove the stale `scripts/publish.sh`. Document the release process, settled design decisions and Go toolchain mechanics in CLAUDE.md.
 * **21.10.26:** - Upgrade Go toolchain to 1.26.10 and pin golang.org/x/net to v0.61.0 to fix two CRITICAL CVEs: CVE-2026-56857 (Go stdlib) and CVE-2026-78663 (Go stdlib and x/net). Also clears 14 HIGH and 2 MEDIUM findings in the Go stdlib and x/net, including CVE-2026-97032, CVE-2026-97031, CVE-2026-94440, CVE-2026-94439, CVE-2026-78669, CVE-2026-78667, CVE-2026-78660, CVE-2026-78659, CVE-2026-56866 and CVE-2026-111943. Rebuild picks up zlib 1.3.2-r1 from Alpine (CVE-2026-85091, HIGH).
